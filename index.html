@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agile Dodger</title>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <div id="game-wrapper">
+        <h1>⚡ Agile Dodger ⚡</h1>
+        <div id="hud">
+            <div class="hud-item">
+                <span class="hud-label">Lives</span>
+                <span class="hud-value" id="lives-val">3</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Score</span>
+                <span class="hud-value" id="score-val">0</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Level</span>
+                <span class="hud-value" id="level-val">1</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Agile Pts</span>
+                <span class="hud-value" id="agile-val">50</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Next Level</span>
+                <span class="hud-value" id="total-val">500</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Level Pts</span>
+                <span class="hud-value" id="level-progress-val">0</span>
+            </div>
+        </div>
+        <div id="canvas-wrapper">
+            <canvas id="game-canvas" width="800" height="500"></canvas>
+            <div id="message-overlay">
+                <div id="message-title">Agile Dodger</div>
+                <div id="message-sub">Dodge the obstacles. Stay agile.</div>
+                <div id="message-detail"></div>
+                <button class="btn" id="action-btn">Start Game</button>
+            </div>
+        </div>
+        <div id="instructions">↑ ↓ or W S to move &nbsp;|&nbsp; Dodge obstacles to earn points</div>
+    </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
