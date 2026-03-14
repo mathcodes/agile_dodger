@@ -1,0 +1,2176 @@
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{serif:['"Crimson Pro"','Georgia','serif'],display:['"Playfair Display"','Georgia','serif'],mono:['"Courier New"','monospace']}}}}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Crimson+Pro:wght@300;400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --wood-dark:#1a0f06;--wood-mid:#2d1a0a;--wood-light:#3d2511;
+  --fret:#b8963a;--nut:#e8d5a3;--string:#d4c090;
+  --dot-root:#e8593c;--dot-note:#4a9ade;--dot-text:#fff;
+}
+body{font-family:'Crimson Pro',serif;background:transparent}
+
+/* ── Compact tuner hardware ── */
+.tuner-device{
+  width:256px;
+  background:linear-gradient(160deg,#2c2c30 0%,#1c1c1e 55%,#101012 100%);
+  border-radius:22px;padding:14px 16px 18px;
+  box-shadow:0 12px 40px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.07);position:relative;
+}
+.tuner-device::before{
+  content:'';position:absolute;inset:0;border-radius:22px;
+  background:linear-gradient(140deg,rgba(255,255,255,.05) 0%,transparent 45%);pointer-events:none;
+}
+.tuner-brand{font-family:'Courier New',monospace;font-size:7.5px;letter-spacing:.35em;color:#444;text-transform:uppercase;text-align:center;margin-bottom:10px}
+.tuner-screen{
+  background:linear-gradient(180deg,#07160a 0%,#0a1f0d 100%);border-radius:12px;
+  border:2px solid #193320;padding:10px 8px 6px;
+  box-shadow:inset 0 3px 10px rgba(0,0,0,.85),0 0 0 1px rgba(0,100,0,.25);margin-bottom:8px;
+}
+.tuner-note-big{
+  font-family:'Courier New',monospace;font-size:46px;font-weight:700;
+  color:#3de050;text-align:center;line-height:1;
+  text-shadow:0 0 14px rgba(61,224,80,.45);letter-spacing:.04em;transition:color .1s,text-shadow .1s;
+}
+.tuner-note-big.flat {color:#ffc107;text-shadow:0 0 14px rgba(255,193,7,.4)}
+.tuner-note-big.sharp{color:#ff6b6b;text-shadow:0 0 14px rgba(255,107,107,.4)}
+.tuner-note-big.in-tune{color:#3de050;text-shadow:0 0 20px rgba(61,224,80,.7)}
+.tuner-freq-small{font-family:'Courier New',monospace;font-size:10.5px;color:#257040;text-align:center;letter-spacing:.06em;margin-top:1px}
+.tuner-arc-wrap{position:relative;margin:6px auto 0;width:200px;height:108px}
+.tuner-arc-wrap svg{width:100%;height:100%;display:block}
+.tuner-leds{display:flex;justify-content:center;align-items:center;gap:8px;margin:5px 0 4px}
+.tuner-led{width:7px;height:7px;border-radius:50%;background:#181818;border:1px solid #2e2e2e;transition:all .1s}
+.tuner-led.flat-led   {background:#ffc107;box-shadow:0 0 7px #ffc107}
+.tuner-led.in-tune-led{background:#3de050;box-shadow:0 0 9px #3de050}
+.tuner-led.sharp-led  {background:#ff6b6b;box-shadow:0 0 7px #ff6b6b}
+.tuner-status{font-family:'Courier New',monospace;font-size:9px;color:#1e5030;text-align:center;letter-spacing:.07em;min-height:13px;transition:color .1s}
+.tuner-status.in-tune{color:#3de050}
+.tuner-status.flat   {color:#ffc107}
+.tuner-status.sharp  {color:#ff6b6b}
+.tuner-strings{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px}
+.tuner-btn{
+  font-family:'Courier New',monospace;font-size:8.5px;padding:4px 0;
+  border-radius:5px;border:1px solid #2e2e2e;background:#1b1b1f;
+  color:#555;cursor:pointer;text-align:center;transition:all .12s;letter-spacing:.02em;
+}
+.tuner-btn:hover{background:#242428;color:#999}
+.tuner-btn.active{
+  background:linear-gradient(180deg,#153020 0%,#0c1f12 100%);
+  color:#3de050;border-color:#1e5a2a;box-shadow:0 0 6px rgba(61,224,80,.2);
+}
+.tuner-power-btn{
+  width:100%;font-family:'Courier New',monospace;font-size:9.5px;
+  letter-spacing:.18em;text-transform:uppercase;padding:7px 0;
+  border-radius:8px;border:1px solid #1e4a24;
+  background:linear-gradient(180deg,#153a1b 0%,#0c2310 100%);
+  color:#3de050;cursor:pointer;transition:all .15s;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.tuner-power-btn:hover{box-shadow:0 0 14px rgba(61,224,80,.22),inset 0 1px 0 rgba(255,255,255,.05)}
+.tuner-power-btn.active{
+  background:linear-gradient(180deg,#2e0d0d 0%,#1a0808 100%);
+  color:#ff6b6b;border-color:#5a2222;
+  box-shadow:0 0 14px rgba(255,107,107,.25),inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ── Log window ── */
+.log-panel{font-family:'Courier New',monospace;background:#0b0b0e;border:1px solid #1c1e2c;border-radius:10px;overflow:hidden}
+.log-header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:linear-gradient(90deg,#101016 0%,#181824 100%);border-bottom:1px solid #1c1e2c;cursor:pointer;user-select:none}
+.log-title-area{display:flex;align-items:center;gap:8px}
+.log-dot{width:8px;height:8px;border-radius:50%}
+.log-dot-r{background:#ff5f57}.log-dot-y{background:#febc2e}.log-dot-g{background:#28c840}
+.log-label{font-size:10px;letter-spacing:.12em;color:#555;text-transform:uppercase}
+.log-badge{font-size:9px;padding:1px 6px;border-radius:8px;background:#1a2030;color:#4a9ade;border:1px solid #253040;min-width:22px;text-align:center}
+.log-actions{display:flex;gap:6px;align-items:center}
+.log-action-btn{font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;border:1px solid #272736;background:#181826;color:#555;letter-spacing:.05em;transition:all .1s}
+.log-action-btn:hover{background:#20203a;color:#aaa}
+.log-body{max-height:200px;overflow-y:auto;padding:5px 4px;transition:max-height .28s ease,padding .28s ease}
+.log-body.collapsed{max-height:0;padding:0;overflow:hidden}
+.log-body::-webkit-scrollbar{width:4px}
+.log-body::-webkit-scrollbar-track{background:#0b0b0e}
+.log-body::-webkit-scrollbar-thumb{background:#272736;border-radius:2px}
+.log-entry{display:flex;gap:8px;padding:2px 8px;border-radius:3px;line-height:1.55;align-items:flex-start}
+.log-entry:hover{background:rgba(255,255,255,.025)}
+.log-ts{color:#2a2a3a;min-width:52px;flex-shrink:0;font-size:10px}
+.log-lvl{min-width:14px;flex-shrink:0;text-align:center;font-size:10px}
+.log-msg{color:#6a7888;word-break:break-all;font-size:10.5px}
+.log-entry.log-info  .log-lvl{color:#4a7ab0}
+.log-entry.log-info  .log-ts {color:#2a3040}
+.log-entry.log-warn  .log-lvl{color:#c09020}
+.log-entry.log-warn  .log-msg{color:#8a7040}
+.log-entry.log-error .log-lvl{color:#b04040}
+.log-entry.log-error .log-msg{color:#aa6666}
+.log-entry.log-note  .log-lvl,
+.log-entry.log-play  .log-lvl{color:#3da050}
+.log-entry.log-note  .log-msg,
+.log-entry.log-play  .log-msg{color:#3da050}
+
+/* ── Neck ── */
+.neck-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px}
+#neck-svg{display:block;min-width:680px}
+
+/* ── Hidden utility ── */
+.hidden{display:none!important}
+
+/* ── Control selects ── */
+.ctrl-group select,.ctrl-group input[type="file"]{
+  appearance:none;background:var(--ui-bg);border:.5px solid var(--ui-border);
+  border-radius:8px;color:var(--text-primary);font-family:'Crimson Pro',serif;
+  font-size:15px;padding:8px 32px 8px 12px;cursor:pointer;transition:border-color .2s;width:100%;
+}
+.ctrl-group select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.ctrl-group select:hover,.ctrl-group input[type="file"]:hover{border-color:var(--color-border-secondary)}
+#midi-file-input{padding:8px 12px}
+#midi-file-input::file-selector-button{
+  font-family:'Crimson Pro',serif;font-size:13px;padding:4px 10px;
+  background:var(--color-background-secondary);border:.5px solid var(--ui-border);
+  border-radius:5px;cursor:pointer;margin-right:8px;color:var(--text-primary);
+}
+
+/* ── MIDI controls ── */
+.midi-controls{display:flex;gap:10px;align-items:center;margin-bottom:1rem;padding:10px;background:var(--ui-bg);border-radius:8px;border:.5px solid var(--ui-border)}
+.midi-btn{font-family:'Crimson Pro',serif;font-size:13px;letter-spacing:.05em;border:.5px solid var(--ui-border);border-radius:6px;padding:6px 14px;cursor:pointer;background:var(--color-background-secondary);color:var(--text-primary);transition:all .15s}
+.midi-btn:hover{background:var(--color-background-info);border-color:var(--color-border-info)}
+.midi-btn:disabled{opacity:.5;cursor:not-allowed}
+.midi-info{font-size:12px;color:var(--text-muted);flex:1}
+.midi-time{font-size:12px;color:var(--text-muted);font-family:'Courier New',monospace}
+
+/* ── Chord diagrams ── */
+.chord-diagram{background:var(--ui-bg);border:.5px solid var(--ui-border);border-radius:8px;padding:.4rem;text-align:center;cursor:pointer;transition:all .2s ease}
+.chord-diagram:hover{background:var(--color-background-primary);border-color:var(--color-border-secondary);transform:translateY(-2px)}
+.chord-name{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:.25rem;font-family:'Crimson Pro',serif}
+.voicing-counter{font-size:10px;color:var(--text-muted);margin-bottom:8px;letter-spacing:.05em;font-weight:500}
+.chord-svg{width:100%;max-width:110px;margin:0 auto;display:block}
+.chord-legend{display:flex;gap:12px;margin-top:1.5rem;flex-wrap:wrap;justify-content:center;padding:1rem;background:var(--ui-bg);border-radius:8px;border:.5px solid var(--ui-border)}
+.chord-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)}
+.chord-legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+</style>
+
+<div class="max-w-[920px] mx-auto px-3 pb-10">
+
+  <!-- Header -->
+  <h1 style="font-family:'Playfair Display',serif" class="text-[22px] font-semibold tracking-[.05em] text-[var(--text-primary)] text-center mb-1">Fretboard Scale Visualizer</h1>
+  <p class="text-center text-[11px] uppercase tracking-[.1em] text-[var(--text-muted)] mb-5">Guitar · Scale · Position Finder</p>
+
+  <!-- Controls grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+    <div class="ctrl-group flex flex-col gap-1">
+      <label class="text-[10px] uppercase tracking-[.1em] text-[var(--text-muted)]" style="font-family:'Crimson Pro',serif">MIDI File</label>
+      <input type="file" id="midi-file-input" accept=".mid,.midi" />
+    </div>
+    <div class="ctrl-group flex flex-col gap-1">
+      <label class="text-[10px] uppercase tracking-[.1em] text-[var(--text-muted)]" style="font-family:'Crimson Pro',serif">Tuning</label>
+      <select id="tuning-sel">
+        <option value="standard">Standard (EADGBe)</option>
+        <option value="dropD">Drop D (DADGBe)</option>
+        <option value="openD">Open D (DADf#Ad)</option>
+        <option value="openG">Open G (DGDGBd)</option>
+        <option value="DADGAD">DADGAD</option>
+        <option value="halfDown">Half Step Down (Eb)</option>
+        <option value="fullDown">Full Step Down (D)</option>
+        <option value="openE">Open E (EBE G#Be)</option>
+        <option value="openA">Open A (EAEAc#e)</option>
+      </select>
+    </div>
+    <div class="ctrl-group flex flex-col gap-1">
+      <label class="text-[10px] uppercase tracking-[.1em] text-[var(--text-muted)]" style="font-family:'Crimson Pro',serif">Root Key</label>
+      <select id="key-sel">
+        <option value="">— Select Key —</option>
+        <option>C</option><option>C#/Db</option><option>D</option>
+        <option>D#/Eb</option><option>E</option><option>F</option>
+        <option>F#/Gb</option><option>G</option><option>G#/Ab</option>
+        <option>A</option><option>A#/Bb</option><option>B</option>
+      </select>
+    </div>
+    <div class="ctrl-group flex flex-col gap-1">
+      <label class="text-[10px] uppercase tracking-[.1em] text-[var(--text-muted)]" style="font-family:'Crimson Pro',serif">Scale Type</label>
+      <select id="scale-sel">
+        <option value="">— Select Scale —</option>
+        <option value="major">Major (Ionian)</option>
+        <option value="minor">Natural Minor (Aeolian)</option>
+        <option value="pentatonicMaj">Major Pentatonic</option>
+        <option value="pentatonicMin">Minor Pentatonic</option>
+        <option value="blues">Blues</option>
+        <option value="dorian">Dorian</option>
+        <option value="phrygian">Phrygian</option>
+        <option value="lydian">Lydian</option>
+        <option value="mixolydian">Mixolydian</option>
+        <option value="locrian">Locrian</option>
+        <option value="harmonicMinor">Harmonic Minor</option>
+        <option value="melodicMinor">Melodic Minor</option>
+        <option value="wholeTone">Whole Tone</option>
+        <option value="diminished">Diminished (Half-Whole)</option>
+        <option value="chromatic">Chromatic</option>
+      </select>
+    </div>
+    <div class="ctrl-group flex flex-col gap-1">
+      <label class="text-[10px] uppercase tracking-[.1em] text-[var(--text-muted)]" style="font-family:'Crimson Pro',serif">Frets Shown</label>
+      <select id="fret-sel">
+        <option value="12">12 frets</option>
+        <option value="15">15 frets</option>
+        <option value="17">17 frets</option>
+        <option value="22" selected>22 frets</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Action row -->
+  <div class="flex gap-2 justify-end mb-4">
+    <button onclick="clearNeck()" style="font-family:'Crimson Pro',serif" class="text-sm tracking-[.05em] border border-[var(--ui-border)] rounded-lg px-4 py-[7px] cursor-pointer transition-all duration-150 bg-transparent text-[var(--text-muted)] hover:bg-[var(--ui-bg)]">✕ Clear</button>
+    <button onclick="exportPDF()" style="font-family:'Crimson Pro',serif" class="text-sm tracking-[.05em] border border-[var(--color-border-info)] rounded-lg px-4 py-[7px] cursor-pointer transition-all duration-150 bg-[var(--color-background-info)] text-[var(--color-text-info)] hover:opacity-85">↓ PDF</button>
+  </div>
+
+  <!-- MIDI playback controls -->
+  <div id="midi-controls" class="midi-controls hidden">
+    <button class="midi-btn" id="midi-play-btn" onclick="toggleMidiPlayback()">▶ Play</button>
+    <button class="midi-btn" id="midi-stop-btn" onclick="stopMidiPlayback()">⏹ Stop</button>
+    <div class="midi-info" id="midi-info">No file loaded</div>
+    <div class="midi-time" id="midi-time">0:00 / 0:00</div>
+  </div>
+
+  <!-- Compact hardware tuner -->
+  <div class="flex justify-center my-6">
+    <div class="tuner-device">
+      <div class="tuner-brand">Chromatic Tuner · Standard</div>
+      <div class="tuner-screen">
+        <div id="tuner-note" class="tuner-note-big">--</div>
+        <div id="tuner-freq" class="tuner-freq-small">-- Hz</div>
+        <!-- Arc meter -->
+        <div class="tuner-arc-wrap">
+          <svg viewBox="0 0 220 118" xmlns="http://www.w3.org/2000/svg">
+            <!-- Tick marks -->
+            <g stroke="#1a3a1a" stroke-width="1">
+              <line x1="110" y1="22" x2="110" y2="29"/>
+              <line transform="rotate(-90,110,110)" x1="110" y1="22" x2="110" y2="29"/>
+              <line transform="rotate(90,110,110)"  x1="110" y1="22" x2="110" y2="29"/>
+              <line transform="rotate(-45,110,110)" x1="110" y1="24" x2="110" y2="30"/>
+              <line transform="rotate(45,110,110)"  x1="110" y1="24" x2="110" y2="30"/>
+            </g>
+            <!-- Arc background -->
+            <path d="M 20 110 A 90 90 0 0 1 200 110" stroke="#1a2a1a" stroke-width="8" fill="none" stroke-linecap="round"/>
+            <!-- Flat zone (amber) -->
+            <path d="M 20 110 A 90 90 0 0 1 46.4 46.4" stroke="#7a4400" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <!-- In-tune zone (green) -->
+            <path d="M 46.4 46.4 A 90 90 0 0 1 173.6 46.4" stroke="#1a6a22" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <!-- Sharp zone (red) -->
+            <path d="M 173.6 46.4 A 90 90 0 0 1 200 110" stroke="#7a1818" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <!-- Centre tick -->
+            <line x1="110" y1="20" x2="110" y2="30" stroke="#2a8a2a" stroke-width="2.5"/>
+            <!-- Needle (rotated by JS via MutationObserver) -->
+            <line id="tuner-needle-arc" x1="110" y1="108" x2="110" y2="24"
+                  stroke="#d0ffd0" stroke-width="2.5" stroke-linecap="round"
+                  transform="rotate(0,110,110)"/>
+            <!-- Pivot -->
+            <circle cx="110" cy="110" r="5" fill="#252528" stroke="#444" stroke-width="1"/>
+            <!-- Labels -->
+            <text x="10"  y="116" fill="#7a4400" font-size="9" font-family="monospace">♭</text>
+            <text x="105" y="116" fill="#1a8a22" font-size="9" font-family="monospace">◆</text>
+            <text x="202" y="116" fill="#7a1818" font-size="9" font-family="monospace">♯</text>
+          </svg>
+        </div>
+        <!-- Status LEDs -->
+        <div class="tuner-leds">
+          <div class="tuner-led" id="tuner-led-flat"></div>
+          <div class="tuner-led" id="tuner-led-center"></div>
+          <div class="tuner-led" id="tuner-led-sharp"></div>
+        </div>
+        <div id="tuner-status" class="tuner-status">Waiting for input...</div>
+        <!-- Hidden div: JS writes style.left here; MutationObserver syncs the arc needle -->
+        <div id="tuner-needle" style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none"></div>
+      </div>
+      <!-- String selector -->
+      <div class="tuner-strings">
+        <button class="tuner-btn active" data-string="0" onclick="selectTunerString(0)">E₂</button>
+        <button class="tuner-btn" data-string="1" onclick="selectTunerString(1)">A₂</button>
+        <button class="tuner-btn" data-string="2" onclick="selectTunerString(2)">D₃</button>
+        <button class="tuner-btn" data-string="3" onclick="selectTunerString(3)">G₃</button>
+        <button class="tuner-btn" data-string="4" onclick="selectTunerString(4)">B₃</button>
+        <button class="tuner-btn" data-string="5" onclick="selectTunerString(5)">E₄</button>
+      </div>
+      <!-- Power button -->
+      <button id="tuner-start-btn" class="tuner-power-btn" onclick="toggleTuner()">🎤 START</button>
+    </div>
+  </div>
+
+  <!-- Fretboard -->
+  <div class="neck-wrap">
+    <svg id="neck-svg" viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <!-- Legend -->
+  <div class="flex gap-5 justify-center mt-3 text-sm text-[var(--text-muted)] items-center">
+    <div class="flex items-center gap-1.5"><div class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:#e8593c"></div><span>Root note</span></div>
+    <div class="flex items-center gap-1.5"><div class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:#4a9ade"></div><span>Scale tone</span></div>
+  </div>
+  <div class="text-center mt-3 text-sm text-[var(--text-muted)] min-h-[20px]" id="note-info"></div>
+  <div class="text-center text-[13px] italic mt-2 text-[var(--text-muted)]" id="status">Select tuning, key, and scale to display notes.</div>
+
+  <!-- Chord section -->
+  <div class="hidden mt-8" id="chords-section">
+    <div style="font-family:'Playfair Display',serif" class="text-[16px] font-semibold text-[var(--text-primary)] mb-3 tracking-[.05em]">Chords in this Scale · Click to explore voicings</div>
+    <div class="grid gap-2 mt-3 pb-2" style="grid-template-columns:repeat(auto-fit,minmax(100px,1fr))" id="chords-grid"></div>
+    <div class="chord-legend" id="chord-legend"></div>
+  </div>
+
+  <!-- Collapsible log window -->
+  <div class="log-panel mt-6" id="log-panel">
+    <div class="log-header" onclick="toggleLogPanel()">
+      <div class="log-title-area">
+        <span class="log-dot log-dot-r"></span>
+        <span class="log-dot log-dot-y"></span>
+        <span class="log-dot log-dot-g"></span>
+        <span class="log-label">Console</span>
+        <span class="log-badge" id="log-badge">0</span>
+      </div>
+      <div class="log-actions" onclick="event.stopPropagation()">
+        <button class="log-action-btn" onclick="clearLog()">Clear</button>
+        <button class="log-action-btn" id="log-toggle" onclick="toggleLogPanel()">▼ Hide</button>
+      </div>
+    </div>
+    <div class="log-body" id="log-body"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Simple MIDI Parser - parsing MIDI files without external dependencies
+class SimpleMidiParser {
+  static parse(data) {
+    const view = new DataView(data);
+    let pos = 0;
+    
+    // Check MIDI header
+    const header = String.fromCharCode(...new Uint8Array(data, pos, 4));
+    if (header !== 'MThd') throw new Error('Invalid MIDI file header');
+    pos += 4;
+    
+    const headerLength = view.getUint32(pos);
+    pos += 4;
+    
+    const format = view.getUint16(pos);
+    pos += 2;
+    
+    const numTracks = view.getUint16(pos);
+    pos += 2;
+    
+    const ticksPerBeat = view.getUint16(pos);
+    pos += 2;
+    
+    pos += headerLength - 6;
+    
+    const tracks = [];
+    
+    for (let i = 0; i < numTracks; i++) {
+      const trackHeader = String.fromCharCode(...new Uint8Array(data, pos, 4));
+      if (trackHeader !== 'MTrk') throw new Error('Invalid track header');
+      pos += 4;
+      
+      const trackLength = view.getUint32(pos);
+      pos += 4;
+      
+      const trackEnd = pos + trackLength;
+      const events = [];
+      
+      let status = 0;
+      
+      while (pos < trackEnd) {
+        const deltaResult = SimpleMidiParser.readVariableLength(data, pos);
+        const deltaTime = deltaResult.value;
+        pos += deltaResult.length;
+        
+        let byte = new Uint8Array(data)[pos];
+        
+        // Check for meta event (0xFF)
+        if (byte === 0xff) {
+          pos++;
+          const metaType = new Uint8Array(data)[pos];
+          pos++;
+          const lengthResult = SimpleMidiParser.readVariableLength(data, pos);
+          pos += lengthResult.length;
+          pos += lengthResult.value;
+          continue;
+        }
+        
+        // Check for sysex events (0xF0, 0xF7)
+        if (byte === 0xf0 || byte === 0xf7) {
+          pos++;
+          const lengthResult = SimpleMidiParser.readVariableLength(data, pos);
+          pos += lengthResult.length;
+          pos += lengthResult.value;
+          continue;
+        }
+        
+        // Handle regular MIDI events
+        if (byte & 0x80) {
+          status = byte;
+          pos++;
+        }
+        
+        const statusHigh = status & 0xf0;
+        const channel = status & 0x0f;
+        
+        let data1 = new Uint8Array(data)[pos] || 0;
+        pos++;
+        
+        let data2 = 0;
+        if (statusHigh !== 0xc0 && statusHigh !== 0xd0) {
+          data2 = new Uint8Array(data)[pos] || 0;
+          pos++;
+        }
+        
+        // Only store Note On (0x90) and Note Off (0x80) events
+        if (statusHigh === 0x90 || statusHigh === 0x80) {
+          events.push({
+            deltaTime: deltaTime,
+            type: statusHigh === 0x90 ? 9 : 8,
+            channel: channel,
+            data: [data1, data2]
+          });
+        }
+      }
+      
+      tracks.push({ events });
+    }
+    
+    return {
+      header: { ticksPerBeat, format, numTracks },
+      tracks
+    };
+  }
+  
+  static readVariableLength(data, pos) {
+    let value = 0;
+    let length = 0;
+    
+    while (true) {
+      const byte = new Uint8Array(data)[pos + length];
+      value = (value << 7) | (byte & 0x7f);
+      length++;
+      if ((byte & 0x80) === 0) break;
+    }
+    
+    return { value, length };
+  }
+}
+</script>
+<script>
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ENH={'C#/Db':'C#','D#/Eb':'D#','F#/Gb':'F#','G#/Ab':'G#','A#/Bb':'A#'};
+const SCALES={
+  major:[0,2,4,5,7,9,11],
+  minor:[0,2,3,5,7,8,10],
+  pentatonicMaj:[0,2,4,7,9],
+  pentatonicMin:[0,3,5,7,10],
+  blues:[0,3,5,6,7,10],
+  dorian:[0,2,3,5,7,9,10],
+  phrygian:[0,1,3,5,7,8,10],
+  lydian:[0,2,4,6,7,9,11],
+  mixolydian:[0,2,4,5,7,9,10],
+  locrian:[0,1,3,5,6,8,10],
+  harmonicMinor:[0,2,3,5,7,8,11],
+  melodicMinor:[0,2,3,5,7,9,11],
+  wholeTone:[0,2,4,6,8,10],
+  diminished:[0,1,3,4,6,7,9,10],
+  chromatic:[0,1,2,3,4,5,6,7,8,9,10,11]
+};
+const TUNINGS={
+  standard:['E2','A2','D3','G3','B3','E4'],
+  dropD:['D2','A2','D3','G3','B3','E4'],
+  openD:['D2','A2','D3','F#3','A3','D4'],
+  openG:['D2','G2','D3','G3','B3','D4'],
+  DADGAD:['D2','A2','D3','G3','A3','D4'],
+  halfDown:['Eb2','Ab2','Db3','Gb3','Bb3','Eb4'],
+  fullDown:['D2','G2','C3','F3','A3','D4'],
+  openE:['E2','B2','E3','G#3','B3','E4'],
+  openA:['E2','A2','E3','A3','C#4','E4']
+};
+const NOTE_TO_IDX={C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11};
+
+function noteToMidi(n){
+  const m=n.match(/^([A-G][#b]?)(\d)$/);
+  if(!m)return 40;
+  const nn=m[1],oct=parseInt(m[2]);
+  return (NOTE_TO_IDX[nn]||0)+(oct+1)*12;
+}
+
+function getNoteAtFret(openNote,fret){
+  const base=noteToMidi(openNote);
+  return NOTES[(base+fret)%12];
+}
+
+let state={tuning:'standard',key:'',scale:'',frets:22};
+
+function getScaleNotes(key,scale){
+  if(!key||!scale)return[];
+  const k=ENH[key]||key;
+  const root=NOTE_TO_IDX[k];
+  if(root===undefined)return[];
+  return SCALES[scale].map(i=>NOTES[(root+i)%12]);
+}
+
+const SVG_NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){
+  const e=document.createElementNS(SVG_NS,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);
+  if(parent)parent.appendChild(e);
+  return e;
+}
+
+function drawNeck(){
+  const svg=document.getElementById('neck-svg');
+  svg.innerHTML='';
+  const nFrets=state.frets;
+  const tuningNotes=TUNINGS[state.tuning]||TUNINGS.standard;
+  const scaleNotes=getScaleNotes(state.key,state.scale);
+  const rootNote=state.key?(ENH[state.key]||state.key):'';
+
+  // Layout
+  const marginL=48,marginR=16,marginT=24,marginB=28;
+  const nStrings=6;
+  const svgW=860,svgH=260;
+  const neckW=svgW-marginL-marginR;
+  const neckH=svgH-marginT-marginB;
+  const stringSpacing=neckH/(nStrings-1);
+
+  // Fret widths (perspective taper: first fret widest)
+  const totalFretRatio=Array.from({length:nFrets},(_,i)=>1/Math.pow(1.059463,i));
+  const sumRatio=totalFretRatio.reduce((a,b)=>a+b,0);
+  const fretWidths=totalFretRatio.map(r=>(r/sumRatio)*neckW*1.01);
+  // Fret X positions
+  const fretX=[marginL];
+  for(let i=0;i<nFrets;i++)fretX.push(fretX[i]+fretWidths[i]);
+
+  // Center X of each fret space
+  const fretMidX=Array.from({length:nFrets},(_,i)=>(fretX[i]+fretX[i+1])/2);
+
+  // BG
+  const defs=el('defs',{},svg);
+  const lg=el('linearGradient',{id:'woodGrad',x1:'0',y1:'0',x2:'0',y2:'1'},defs);
+  el('stop',{offset:'0%','stop-color':'#2a1508'},lg);
+  el('stop',{offset:'50%','stop-color':'#1e0e05'},lg);
+  el('stop',{offset:'100%','stop-color':'#2a1508'},lg);
+
+  // Neck body
+  el('rect',{x:marginL,y:marginT,width:neckW,height:neckH,fill:'url(#woodGrad)',rx:'4'},svg);
+
+  // Fret inlay dots (standard positions)
+  const inlayFrets=[3,5,7,9,12,15,17,19,21];
+  const doubleFrets=[12];
+  for(const f of inlayFrets){
+    if(f>nFrets)continue;
+    const ix=fretMidX[f-1];
+    const iy=marginT+neckH/2;
+    if(doubleFrets.includes(f)){
+      el('circle',{cx:ix,cy:marginT+stringSpacing*1.5,r:'5',fill:'#3d2d18',opacity:'0.7'},svg);
+      el('circle',{cx:ix,cy:marginT+stringSpacing*3.5,r:'5',fill:'#3d2d18',opacity:'0.7'},svg);
+    } else {
+      el('circle',{cx:ix,cy:iy,r:'5',fill:'#3d2d18',opacity:'0.7'},svg);
+    }
+  }
+
+  // Fret lines
+  for(let i=0;i<=nFrets;i++){
+    const x=fretX[i];
+    const w=i===0?4:1.5;
+    const col=i===0?'#e8d5a3':'#b8963a';
+    el('rect',{x:x-(w/2),y:marginT,width:w,height:neckH,fill:col,rx:'1'},svg);
+  }
+
+  // Fret numbers
+  for(let i=1;i<=nFrets;i++){
+    const x=fretMidX[i-1];
+    const t=el('text',{x:x,y:svgH-8,'text-anchor':'middle','font-size':'9','font-family':'Crimson Pro,serif','fill':'#7a6540','opacity':'0.9'},svg);
+    t.textContent=i;
+  }
+
+  // String labels (open tuning note)
+  const tuningDisp=TUNINGS[state.tuning];
+  for(let s=0;s<nStrings;s++){
+    const y=marginT+s*stringSpacing;
+    const note=tuningDisp[nStrings-1-s].replace(/\d/,'');
+    const t=el('text',{x:marginL-6,y:y+4,'text-anchor':'end','font-size':'11','font-family':'Crimson Pro,serif','fill':'#a89060'},svg);
+    t.textContent=note;
+  }
+
+  // Strings
+  for(let s=0;s<nStrings;s++){
+    const y=marginT+s*stringSpacing;
+    const gaugeW=0.6+((nStrings-1-s)/nStrings)*1.8;
+    el('line',{x1:marginL,y1:y,x2:marginL+neckW,y2:y,stroke:'#c8b888','stroke-width':gaugeW,opacity:'0.85'},svg);
+  }
+
+  // Scale dots
+  if(scaleNotes.length>0){
+    for(let s=0;s<nStrings;s++){
+      const stringIdx=nStrings-1-s;
+      const openNote=tuningNotes[stringIdx];
+      const y=marginT+s*stringSpacing;
+      // Fret 0 = open string
+      for(let f=0;f<=nFrets;f++){
+        const noteAtFret=getNoteAtFret(openNote,f);
+        if(scaleNotes.includes(noteAtFret)){
+          const isRoot=noteAtFret===rootNote;
+          const cx=f===0?marginL-18:fretMidX[f-1];
+          const cy=y;
+          const r=f===0?8:9;
+          const fill=isRoot?'#e8593c':'#4a9ade';
+          const g=el('g',{},svg);
+          el('circle',{cx,cy,r,fill,opacity:'0.92'},g);
+          el('circle',{cx,cy,r:r-0.5,fill:'none',stroke:'rgba(255,255,255,0.25)','stroke-width':'1'},g);
+          const t=el('text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':'8','font-weight':'600','font-family':'Crimson Pro,serif','fill':'#fff'},g);
+          t.textContent=noteAtFret;
+        }
+      }
+    }
+  }
+
+  // Update status
+  const st=document.getElementById('status');
+  const ni=document.getElementById('note-info');
+  if(scaleNotes.length>0){
+    const sn=scaleNotes.join('  ·  ');
+    ni.textContent=scaleNotes.join(' · ');
+    st.textContent=`${state.key} ${document.getElementById('scale-sel').options[document.getElementById('scale-sel').selectedIndex].text} — ${scaleNotes.length} notes`;
+    renderChords();
+  } else {
+    ni.textContent='';
+    st.textContent='Select tuning, key, and scale to display notes.';
+    document.getElementById('chords-section').classList.add('hidden');
+  }
+}
+
+function maybeRender(){
+  state.tuning=document.getElementById('tuning-sel').value;
+  state.key=document.getElementById('key-sel').value;
+  state.scale=document.getElementById('scale-sel').value;
+  state.frets=parseInt(document.getElementById('fret-sel').value);
+  drawNeck();
+}
+
+function clearNeck(){
+  document.getElementById('key-sel').value='';
+  document.getElementById('scale-sel').value='';
+  maybeRender();
+}
+
+['tuning-sel','key-sel','scale-sel','fret-sel'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',maybeRender);
+});
+
+function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'letter'});
+  const W=doc.internal.pageSize.getWidth();
+  const H=doc.internal.pageSize.getHeight();
+
+  // Dark bg
+  doc.setFillColor(26,15,6);
+  doc.rect(0,0,W,H,'F');
+
+  // Title
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(20);
+  doc.setTextColor(232,213,163);
+  const keyLabel=document.getElementById('key-sel').value||'No key';
+  const scaleLabel=document.getElementById('scale-sel').selectedOptions[0].text||'No scale';
+  const tuningLabel=document.getElementById('tuning-sel').selectedOptions[0].text;
+  doc.text(`${keyLabel} ${scaleLabel}`,W/2,38,{align:'center'});
+
+  doc.setFontSize(10);
+  doc.setTextColor(168,144,96);
+  doc.text(`Tuning: ${tuningLabel}`,W/2,54,{align:'center'});
+
+  // Neck params
+  const mL=50,mR=20,mT=80,neckH=140,nStrings=6;
+  const nFrets=state.frets;
+  const neckW=W-mL-mR;
+  const stringSp=neckH/(nStrings-1);
+  const tuningNotes=TUNINGS[state.tuning];
+  const scaleNotes=getScaleNotes(state.key,state.scale);
+  const rootNote=state.key?(ENH[state.key]||state.key):'';
+
+  const totalFretRatio=Array.from({length:nFrets},(_,i)=>1/Math.pow(1.059463,i));
+  const sumRatio=totalFretRatio.reduce((a,b)=>a+b,0);
+  const fretWidths=totalFretRatio.map(r=>(r/sumRatio)*neckW*1.01);
+  const fretX=[mL];
+  for(let i=0;i<nFrets;i++)fretX.push(fretX[i]+fretWidths[i]);
+  const fretMidX=Array.from({length:nFrets},(_,i)=>(fretX[i]+fretX[i+1])/2);
+
+  // Neck BG
+  doc.setFillColor(30,14,5);
+  doc.roundedRect(mL,mT,neckW,neckH,4,4,'F');
+
+  // Fret lines
+  for(let i=0;i<=nFrets;i++){
+    const x=fretX[i];
+    if(i===0){doc.setFillColor(232,213,163);doc.rect(x-2,mT,4,neckH,'F');}
+    else{doc.setFillColor(184,150,58);doc.rect(x-0.75,mT,1.5,neckH,'F');}
+  }
+
+  // Fret numbers
+  doc.setFontSize(7);
+  doc.setTextColor(122,101,64);
+  for(let i=1;i<=nFrets;i++){
+    doc.text(String(i),fretMidX[i-1],mT+neckH+12,{align:'center'});
+  }
+
+  // Strings
+  for(let s=0;s<nStrings;s++){
+    const y=mT+s*stringSp;
+    const gw=0.5+((nStrings-1-s)/nStrings)*1.5;
+    doc.setDrawColor(200,184,136);
+    doc.setLineWidth(gw);
+    doc.line(mL,y,mL+neckW,y);
+  }
+
+  // String labels
+  doc.setFontSize(9);
+  for(let s=0;s<nStrings;s++){
+    const y=mT+s*stringSp;
+    const note=tuningNotes[nStrings-1-s].replace(/\d/,'');
+    doc.setTextColor(168,144,96);
+    doc.text(note,mL-5,y+3,{align:'right'});
+  }
+
+  // Scale dots
+  if(scaleNotes.length>0){
+    for(let s=0;s<nStrings;s++){
+      const stringIdx=nStrings-1-s;
+      const openNote=tuningNotes[stringIdx];
+      const y=mT+s*stringSp;
+      for(let f=0;f<=nFrets;f++){
+        const noteAtFret=getNoteAtFret(openNote,f);
+        if(scaleNotes.includes(noteAtFret)){
+          const isRoot=noteAtFret===rootNote;
+          const cx=f===0?mL-16:fretMidX[f-1];
+          if(isRoot){doc.setFillColor(232,89,60);}
+          else{doc.setFillColor(74,154,222);}
+          doc.circle(cx,y,7,'F');
+          doc.setFontSize(6.5);
+          doc.setTextColor(255,255,255);
+          doc.text(noteAtFret,cx,y+2.5,{align:'center'});
+        }
+      }
+    }
+  }
+
+  // Scale notes legend at bottom
+  if(scaleNotes.length>0){
+    doc.setFontSize(10);
+    doc.setTextColor(168,144,96);
+    const noteLine='Notes: '+scaleNotes.join('  ·  ');
+    doc.text(noteLine,W/2,H-22,{align:'center'});
+
+    // Legend
+    doc.setFillColor(232,89,60);doc.circle(W/2-60,H-10,4,'F');
+    doc.setTextColor(168,144,96);doc.setFontSize(8);doc.text('Root',W/2-53,H-7);
+    doc.setFillColor(74,154,222);doc.circle(W/2-10,H-10,4,'F');
+    doc.text('Scale tone',W/2-3,H-7);
+  }
+
+  const fname=`${(state.key||'scale').replace('/','_')}_${state.scale||'scale'}_${state.tuning}.pdf`;
+  doc.save(fname);
+}
+
+// ============= AUDIO SYNTHESIS =============
+let audioContext=null;
+const activeOscillators=new Map();  // Map of instanceId -> {oscillator, gain, startTime, noteNum}
+
+function getAudioContext(){
+  if(!audioContext){
+    audioContext=new(window.AudioContext||window.webkitAudioContext)();
+  }
+  return audioContext;
+}
+
+function noteNumberToFrequency(noteNum){
+  // A4 (note 69) = 440 Hz
+  return 440*Math.pow(2,(noteNum-69)/12);
+}
+
+function playNote(noteInstance){
+  const ctx=getAudioContext();
+  const freq=noteNumberToFrequency(noteInstance.noteNum);
+  
+  const osc=ctx.createOscillator();
+  const gain=ctx.createGain();
+  
+  osc.frequency.value=freq;
+  osc.type='sine';
+  
+  // Calculate remaining duration from current playback position
+  const remainingTime=Math.max(0.05,noteInstance.endTime-midiState.currentTime);
+  
+  // Set up envelope
+  const now=ctx.currentTime;
+  gain.gain.setValueAtTime(0.15,now);  // Start volume
+  gain.gain.exponentialRampToValueAtTime(0.01,now+remainingTime);  // Fade out
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  
+  osc.start(now);
+  osc.stop(now+remainingTime);
+  
+  const instanceId=noteInstance.instanceId;
+  activeOscillators.set(instanceId,{osc,gain,startTime:now,noteNum:noteInstance.noteNum});
+  
+  // Auto-cleanup after note ends
+  osc.onended=()=>{
+    activeOscillators.delete(instanceId);
+  };
+}
+
+function stopNote(instanceId){
+  if(!activeOscillators.has(instanceId))return;
+  
+  const {osc,gain}=activeOscillators.get(instanceId);
+  const ctx=getAudioContext();
+  const now=ctx.currentTime;
+  
+  // Quick fade out (100ms)
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setValueAtTime(gain.gain.value,now);
+  gain.gain.exponentialRampToValueAtTime(0.001,now+0.1);
+  
+  osc.stop(now+0.1);
+  activeOscillators.delete(instanceId);
+}
+
+// ============= MIDI SUPPORT =============
+const midiState={
+  file:null,
+  isPlaying:false,
+  currentTime:0,  // in seconds
+  duration:0,
+  notes:[],  // {noteNum, startTime, endTime, instanceId}
+  startTime:0,
+  playingNotes:new Set(),  // Set of activeInstanceIds
+  previousPlayingNotes:new Set(),  // Set of previousInstanceIds
+  animationId:null,
+  tempo:120  // BPM
+};
+
+// Convert MIDI note number to note name
+function midiNumberToNote(noteNum){
+  const notes=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const octave=Math.floor(noteNum/12)-1;
+  const noteName=notes[noteNum%12];
+  return noteName+octave;
+}
+
+// Find which string and fret a MIDI note is on
+function findFretPosition(noteNum){
+  const tuningNotes=TUNINGS[state.tuning]||TUNINGS.standard;
+  const positions=[];
+  
+  for(let stringIdx=0;stringIdx<6;stringIdx++){
+    const openNote=tuningNotes[stringIdx];
+    const openMidi=noteToMidi(openNote);
+    const fret=noteNum-openMidi;
+    if(fret>=0&&fret<=state.frets){
+      positions.push({string:stringIdx,fret:fret,noteNum:noteNum});
+    }
+  }
+  
+  if(positions.length===0){
+    const tuningNotes=TUNINGS[state.tuning]||TUNINGS.standard;
+    const lowestMidi=Math.min(...tuningNotes.map(n=>noteToMidi(n)));
+    const highestMidi=Math.max(...tuningNotes.map(n=>noteToMidi(n)))+state.frets;
+    console.log(`❌ ${midiNumberToNote(noteNum)} (MIDI ${noteNum}) not on fretboard. Range: ${midiNumberToNote(lowestMidi)}-${midiNumberToNote(highestMidi)}`);
+  }
+  
+  return positions.length>0?positions[0]:null;// Return first valid position
+}
+
+// Parse MIDI file using midi-parser-js
+function parseMidiFile(data){
+  try{
+    // Parse the MIDI file using our simple parser
+    const midiArray=SimpleMidiParser.parse(data);
+    const ppq=midiArray.header.ticksPerBeat;
+    
+    let durationInTicks=0;
+    const processedNotes=[];
+    
+    // Process all tracks to extract notes
+    for(const track of midiArray.tracks){
+      let currentTick=0;
+      const activeNotes=new Map();  // Track note-on for matching with note-off
+      
+      for(const event of track.events){
+        currentTick+=event.deltaTime;
+        
+        if(event.type===9){  // Note On
+          const noteNum=event.data[0];
+          const velocity=event.data[1];
+          
+          if(velocity>0){  // Actually a note on (velocity 0 = note off)
+            activeNotes.set(noteNum,{noteNum,startTick:currentTick});
+          }
+        }else if(event.type===8){  // Note Off
+          const noteNum=event.data[0];
+          if(activeNotes.has(noteNum)){
+            const noteData=activeNotes.get(noteNum);
+            noteData.endTick=currentTick;
+            processedNotes.push(noteData);
+            activeNotes.delete(noteNum);
+            durationInTicks=Math.max(durationInTicks,currentTick);
+          }
+        }
+      }
+      
+      // Handle notes that aren't explicitly closed (common in some MIDI files)
+      for(const [noteNum,noteData] of activeNotes){
+        noteData.endTick=currentTick;
+        processedNotes.push(noteData);
+      }
+    }
+    
+    // Convert ticks to seconds (assuming 120 BPM, standard MIDI tempo)
+    const secondsPerBeat=60/midiState.tempo;  // Seconds per beat at current tempo
+    const tempoMultiplier=1;  // Can be adjusted based on parsed tempo events
+    
+    for(let i=0;i<processedNotes.length;i++){
+      const note=processedNotes[i];
+      note.startTime=(note.startTick/ppq)*secondsPerBeat*tempoMultiplier;
+      note.endTime=(note.endTick/ppq)*secondsPerBeat*tempoMultiplier;
+      note.duration=note.endTime-note.startTime;
+      note.instanceId=i;  // Unique ID for each note instance
+    }
+    
+    midiState.duration=(durationInTicks/ppq)*secondsPerBeat*tempoMultiplier;
+    midiState.notes=processedNotes.filter(n=>n.duration>0.05);  // Filter out very short notes
+    
+    // Re-index instance IDs after filtering
+    midiState.notes.forEach((note,idx)=>{
+      note.instanceId=idx;
+    });
+    
+    // Calculate playable range and transpose if needed
+    if(midiState.notes.length>0){
+      const minNote=Math.min(...midiState.notes.map(n=>n.noteNum));
+      const maxNote=Math.max(...midiState.notes.map(n=>n.noteNum));
+      
+      console.log(`\n=== TRANSPOSITION CHECK ===`);
+      console.log(`Parsed note range: ${midiNumberToNote(minNote)} (${minNote}) to ${midiNumberToNote(maxNote)} (${maxNote})`);
+      
+      // Calculate guitar's playable range
+      const tuningNotes=TUNINGS[state.tuning]||TUNINGS.standard;
+      const minPlayable=Math.min(...tuningNotes.map(n=>noteToMidi(n)));
+      const maxPlayable=Math.max(...tuningNotes.map(n=>noteToMidi(n)))+state.frets;
+      
+      console.log(`Guitar playable range: ${midiNumberToNote(minPlayable)} (${minPlayable}) to ${midiNumberToNote(maxPlayable)} (${maxPlayable})`);
+      
+      let transposition=0;
+      
+      // If notes are too high, transpose down
+      if(maxNote>maxPlayable){
+        transposition=maxPlayable-maxNote;
+      }
+      // If notes are too low, transpose up
+      else if(minNote<minPlayable){
+        transposition=minPlayable-minNote;
+      }
+      
+      console.log(`Calculated transposition: ${transposition} semitones`);
+      
+      // Apply transposition in octaves (12 semitones) to keep original character
+      if(Math.abs(transposition)>6){
+        const octaves=Math.round(transposition/12);
+        transposition=octaves*12;
+        
+        console.log(`Applying octave transposition: ${transposition} semitones (${octaves} octaves)`);
+        
+        // Apply transposition to all notes
+        midiState.notes.forEach(note=>{
+          note.noteNum+=transposition;
+        });
+      }
+      
+      const minNoteAfter=Math.min(...midiState.notes.map(n=>n.noteNum));
+      const maxNoteAfter=Math.max(...midiState.notes.map(n=>n.noteNum));
+      
+      console.log(`After transposition: ${midiNumberToNote(minNoteAfter)} (${minNoteAfter}) to ${midiNumberToNote(maxNoteAfter)} (${maxNoteAfter})`);
+      console.log(`===========================\n`);
+    }
+    
+    console.log(`Parsed tracks: ${midiArray.tracks.length}`);
+    console.log(`PPQ: ${ppq}`);
+    console.log(`Total events found: ${processedNotes.length}`);
+    console.log(`Filtered notes (>50ms): ${midiState.notes.length}`);
+    console.log(`Duration: ${midiState.duration.toFixed(1)}s`);
+    
+    // Log ALL notes in order
+    console.log(`\n=== ALL MIDI NOTES (${midiState.notes.length} total) ===`);
+    let noteSequence = [];
+    for(let i = 0; i < midiState.notes.length; i++){
+      const note = midiState.notes[i];
+      const noteName = midiNumberToNote(note.noteNum);
+      const freq = noteNumberToFrequency(note.noteNum).toFixed(1);
+      noteSequence.push(noteName);
+      console.log(`${i+1}. ${noteName} (MIDI ${note.noteNum}, ${freq}Hz) ${note.startTime.toFixed(2)}s-${note.endTime.toFixed(2)}s`);
+    }
+    console.log(`Sequence: ${noteSequence.join('-')}`);
+    console.log(`===================================\n`);
+    return true;
+  }catch(e){
+    console.error('MIDI parsing error:',e);
+    console.error('Error details:',e.message,e.stack);
+    alert(`Failed to parse MIDI file:\n${e.message}\n\nPlease ensure it is a valid MIDI file. Try regenerating with the provided script.`);
+    return false;
+  }
+}
+
+// Handle MIDI file selection
+document.getElementById('midi-file-input').addEventListener('change',function(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  
+  const reader=new FileReader();
+  reader.onload=function(event){
+    const arrayBuffer=event.target.result;
+    if(parseMidiFile(arrayBuffer)){
+      midiState.file=file.name;
+      document.getElementById('midi-controls').classList.remove('hidden');
+      document.getElementById('midi-info').textContent=`Loaded: ${file.name} (${midiState.notes.length} notes, ${midiState.duration.toFixed(1)}s)`;
+      document.getElementById('midi-play-btn').disabled=false;
+      stopMidiPlayback();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Format time for display
+function formatTime(seconds){
+  const mins=Math.floor(seconds/60);
+  const secs=Math.floor(seconds%60);
+  return `${mins}:${secs.toString().padStart(2,'0')}`;
+}
+
+// Clear all visual highlights
+function clearNoteHighlights(){
+  const svg=document.getElementById('neck-svg');
+  // Remove temporary MIDI dots (notes not in the current scale)
+  svg.querySelectorAll('[data-midi-temp]').forEach(g=>g.remove());
+  // Restore fill of scale-dot circles that were highlighted
+  const highlightedNotes=svg.querySelectorAll('[data-original-fill]');
+  highlightedNotes.forEach(circle=>{
+    const originalFill=circle.getAttribute('data-original-fill');
+    circle.setAttribute('fill',originalFill);
+    circle.removeAttribute('data-original-fill');
+  });
+}
+
+// Update playing notes display
+function updatePlayingNotes(){
+  clearNoteHighlights();
+  
+  if(midiState.playingNotes.size===0)return;
+  
+  const svg=document.getElementById('neck-svg');
+  const marginL=48,marginT=24;
+  const neckH=260-marginT-28;
+  const stringSpacing=neckH/5;
+  
+  // Reconstruct fret X positions for coordinate matching
+  const svgW=860,marginR=16;
+  const neckW=svgW-marginL-marginR;
+  const nFrets=state.frets;
+  const totalFretRatio=Array.from({length:nFrets},(_,i)=>1/Math.pow(1.059463,i));
+  const sumRatio=totalFretRatio.reduce((a,b)=>a+b,0);
+  const fretWidths=totalFretRatio.map(r=>(r/sumRatio)*neckW*1.01);
+  const fretX=[marginL];
+  for(let i=0;i<nFrets;i++)fretX.push(fretX[i]+fretWidths[i]);
+  const fretMidX=Array.from({length:nFrets},(_,i)=>(fretX[i]+fretX[i+1])/2);
+  
+  // Get all groups that contain circles (the note dots)
+  const allGroups=svg.querySelectorAll('g');
+  
+  for(const instanceId of midiState.playingNotes){
+    const noteInstance=midiState.notes.find(n=>n.instanceId===instanceId);
+    if(!noteInstance)continue;
+    
+    const pos=findFretPosition(noteInstance.noteNum);
+    if(!pos){
+      console.log(`❌ No fret position found for ${midiNumberToNote(noteInstance.noteNum)} (MIDI ${noteInstance.noteNum})`);
+      continue;
+    }
+    
+    const stringIdx=pos.string;
+    const fretIdx=pos.fret;
+    const targetY=marginT+stringIdx*stringSpacing;
+    const expectedX=fretIdx===0?(marginL-18):fretMidX[fretIdx-1];
+    
+    // Find the group containing the circle at this position
+    let foundGroup=false;
+    for(const g of allGroups){
+      const circles=g.querySelectorAll('circle');
+      if(circles.length<1)continue;
+      
+      // Look at the first circle (the solid dot)
+      const circle=circles[0];
+      if(!circle.hasAttribute('cx')||!circle.hasAttribute('cy'))continue;
+      
+      const cx=parseFloat(circle.getAttribute('cx'));
+      const cy=parseFloat(circle.getAttribute('cy'));
+      
+      // Check both X and Y coordinates with tolerance
+      if(Math.abs(cx-expectedX)<10&&Math.abs(cy-targetY)<2){
+        const originalFill=circle.getAttribute('fill');
+        if(originalFill&&!circle.hasAttribute('data-original-fill')){
+          circle.setAttribute('data-original-fill',originalFill);
+        }
+        circle.setAttribute('fill','#ffff00');  // Yellow fill when playing
+        
+        // Get the text content to show which note was highlighted
+        const textEl=g.querySelector('text');
+        const displayedNote=textEl?textEl.textContent:'unknown';
+        console.log(`✓ Highlighted ${midiNumberToNote(noteInstance.noteNum)} (MIDI ${noteInstance.noteNum}) at fret ${fretIdx} string ${stringIdx} - circle shows: ${displayedNote}`);
+        
+        foundGroup=true;
+        break;
+      }
+    }
+    
+    if(!foundGroup){
+      // Note is not in the scale - create a temporary yellow dot so it is always visible
+      const noteName=midiNumberToNote(noteInstance.noteNum);
+      const r=fretIdx===0?8:9;
+      const g=el('g',{'data-midi-temp':'true'},svg);
+      el('circle',{cx:expectedX,cy:targetY,r,fill:'#ffff00',opacity:'0.92'},g);
+      el('circle',{cx:expectedX,cy:targetY,r:r-0.5,fill:'none',stroke:'rgba(255,255,255,0.35)','stroke-width':'1'},g);
+      const t=el('text',{x:expectedX,y:targetY+4,'text-anchor':'middle','font-size':'8','font-weight':'600','font-family':'Crimson Pro,serif','fill':'#222'},g);
+      t.textContent=noteName;
+      console.log(`✓ Temp yellow dot for ${noteName} (MIDI ${noteInstance.noteNum}) at fret ${fretIdx} string ${stringIdx}`);
+      // Debug: log nearby circles
+      let nearbyCircles=[];
+      for(const grp of allGroups){
+        const circle=grp.querySelector('circle[cx][cy]');
+        if(!circle)continue;
+        const cx=parseFloat(circle.getAttribute('cx'));
+        const cy=parseFloat(circle.getAttribute('cy'));
+        if(Math.abs(cx-expectedX)<50&&Math.abs(cy-targetY)<50){
+          const textEl=grp.querySelector('text');
+          const displayNote=textEl?textEl.textContent:'?';
+          nearbyCircles.push({x:cx.toFixed(0),y:cy.toFixed(0),note:displayNote});
+        }
+      }
+      if(nearbyCircles.length>0){
+        console.log(`   Nearby circles:`, nearbyCircles);
+      }
+    }
+  }
+}
+
+// Animation loop for MIDI playback
+function animateMidiPlayback(){
+  if(!midiState.isPlaying)return;
+  
+  const elapsed=Date.now()-midiState.startTime;
+  midiState.currentTime=elapsed/1000;  // Convert to seconds
+  
+  if(midiState.currentTime>=midiState.duration){
+    stopMidiPlayback();
+    return;
+  }
+  
+  // Update which notes are currently playing
+  midiState.playingNotes.clear();
+  const tolerance=0.05;  // 50ms tolerance
+  
+  for(const note of midiState.notes){
+    if(midiState.currentTime>=note.startTime-tolerance&&midiState.currentTime<=note.endTime+tolerance){
+      midiState.playingNotes.add(note.instanceId);
+    }
+  }
+  
+  if(midiState.playingNotes.size>0&&midiState.previousPlayingNotes.size===0){
+    console.log(`Now playing ${midiState.playingNotes.size} notes at ${midiState.currentTime.toFixed(2)}s`);
+  }
+  
+  // Handle audio: start new notes and stop ended notes
+  for(const instanceId of midiState.playingNotes){
+    if(!midiState.previousPlayingNotes.has(instanceId)){
+      // Note instance just started
+      const noteInstance=midiState.notes.find(n=>n.instanceId===instanceId);
+      if(noteInstance){
+        playNote(noteInstance);
+        const noteName=midiNumberToNote(noteInstance.noteNum);
+        console.log(`🎵 [${midiState.currentTime.toFixed(2)}s] ▶ ${noteName} (MIDI ${noteInstance.noteNum})`);
+      }
+    }
+  }
+  
+  for(const instanceId of midiState.previousPlayingNotes){
+    if(!midiState.playingNotes.has(instanceId)){
+      // Note instance just stopped
+      const noteInstance=midiState.notes.find(n=>n.instanceId===instanceId);
+      if(noteInstance){
+        const noteName=midiNumberToNote(noteInstance.noteNum);
+        console.log(`                                  ⏹ ${noteName}`);
+      }
+      stopNote(instanceId);
+    }
+  }
+  
+  // Update visual display
+  updatePlayingNotes();
+  
+  // Update time display
+  document.getElementById('midi-time').textContent=`${formatTime(midiState.currentTime)} / ${formatTime(midiState.duration)}`;
+  
+  // Save current playing notes for next frame
+  midiState.previousPlayingNotes=new Set(midiState.playingNotes);
+  
+  midiState.animationId=requestAnimationFrame(animateMidiPlayback);
+}
+
+// Toggle MIDI playback
+function toggleMidiPlayback(){
+  if(!midiState.notes.length){
+    alert('No MIDI file loaded');
+    return;
+  }
+  
+  if(midiState.isPlaying){
+    midiState.isPlaying=false;
+    document.getElementById('midi-play-btn').textContent='▶ Play';
+    if(midiState.animationId){
+      cancelAnimationFrame(midiState.animationId);
+    }
+    // Don't stop audio yet - let it fade out naturally
+  }else{
+    midiState.isPlaying=true;
+    midiState.startTime=Date.now()-midiState.currentTime*1000;
+    midiState.previousPlayingNotes.clear();
+    document.getElementById('midi-play-btn').textContent='⏸ Pause';
+    animateMidiPlayback();
+  }
+}
+
+// Stop MIDI playback
+function stopMidiPlayback(){
+  if(midiState.isPlaying){
+    midiState.isPlaying=false;
+    if(midiState.animationId){
+      cancelAnimationFrame(midiState.animationId);
+    }
+  }
+  
+  // Stop all active oscillators
+  for(const instanceId of activeOscillators.keys()){
+    stopNote(instanceId);
+  }
+  
+  midiState.currentTime=0;
+  midiState.previousPlayingNotes.clear();
+  midiState.playingNotes.clear();
+  document.getElementById('midi-play-btn').textContent='▶ Play';
+  document.getElementById('midi-time').textContent=`0:00 / ${formatTime(midiState.duration)}`;
+  clearNoteHighlights();
+}
+
+// ============= CHROMATIC TUNER =============
+const tunerState={
+  isActive:false,
+  selectedString:0,
+  audioContext:null,
+  analyser:null,
+  dataArray:null,
+  animationId:null,
+  stream:null
+};
+
+const GUITAR_NOTES=['E','A','D','G','B','E'];
+const TARGET_FREQUENCIES={
+  'E':82.41,'A':110.00,'D':146.83,'G':196.00,'B':246.94,'E':329.63
+};
+
+function selectTunerString(stringNum){
+  tunerState.selectedString=stringNum;
+  // Update button states
+  document.querySelectorAll('.tuner-btn[data-string]').forEach(btn=>{
+    btn.classList.remove('active');
+  });
+  document.querySelector(`.tuner-btn[data-string="${stringNum}"]`).classList.add('active');
+  
+  const note=GUITAR_NOTES[stringNum];
+  document.getElementById('tuner-status').textContent=`Listening for ${note} string...`;
+}
+
+// Autocorrelation pitch detection
+function autoCorrelate(buffer,sampleRate){
+  const SIZE=buffer.length;
+  const MAX_SAMPLES=Math.floor(SIZE/2);
+  let best_offset=-1;
+  let best_correlation=0;
+  let rms=0;
+  
+  // Calculate RMS
+  for(let i=0;i<SIZE;i++){
+    const val=buffer[i];
+    rms+=val*val;
+  }
+  rms=Math.sqrt(rms/SIZE);
+  
+  if(rms<0.01)return -1;  // Too quiet
+  
+  let lastCorrelation=1;
+  for(let offset=1;offset<MAX_SAMPLES;offset++){
+    let correlation=0;
+    for(let i=0;i<MAX_SAMPLES;i++){
+      correlation+=Math.abs(buffer[i]-(buffer[i+offset]||0));
+    }
+    correlation=1-(correlation/MAX_SAMPLES);
+    if(correlation>0.9&&correlation>lastCorrelation){
+      const foundGoodCorrelation=false;
+      if(correlation>best_correlation){
+        best_correlation=correlation;
+        best_offset=offset;
+      }
+    }
+    lastCorrelation=correlation;
+  }
+  
+  if(best_correlation>0.01){
+    return sampleRate/best_offset;
+  }
+  return -1;
+}
+
+// Convert frequency to nearest note
+function frequencyToNote(freq){
+  if(freq<0)return {note:'--',cents:0,octave:0};
+  
+  const A4=440;
+  const C0=16.35;  // Frequency of C in octave 0
+  
+  // Calculate semitones from C0
+  const semitones=12*Math.log2(freq/C0);
+  const noteIndex=Math.round(semitones)%12;
+  const octave=Math.floor((Math.round(semitones)%12+Math.round(semitones)/12)/12);
+  const noteNames=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  
+  // Calculate cents (how far off from nearest semitone)
+  const cents=Math.round((semitones-Math.round(semitones))*100);
+  
+  return {
+    note:noteNames[noteIndex],
+    octave:Math.max(0,octave),
+    cents:cents
+  };
+}
+
+// Update tuner display
+function updateTunerDisplay(freq){
+  document.getElementById('tuner-freq').textContent=`${freq.toFixed(1)} Hz`;
+  
+  const noteInfo=frequencyToNote(freq);
+  const targetNote=GUITAR_NOTES[tunerState.selectedString];
+  const targetFreq=TARGET_FREQUENCIES[targetNote];
+  
+  document.getElementById('tuner-note').textContent=`${noteInfo.note}${noteInfo.octave}`;
+  
+  const centsOff=Math.log2(freq/targetFreq)*1200;  // Convert frequency ratio to cents
+  
+  // Update needle position (-50 to +50 cents range)
+  const needlePercent=Math.max(0,Math.min(100,(50+centsOff)/100*100));
+  document.getElementById('tuner-needle').style.left=`${needlePercent}%`;
+  
+  // Update status
+  const statusEl=document.getElementById('tuner-status');
+  statusEl.classList.remove('in-tune','flat','sharp');
+  
+  if(Math.abs(centsOff)<5){
+    statusEl.classList.add('in-tune');
+    statusEl.textContent=`✓ In Tune! (${centsOff.toFixed(1)} cents)`;
+  }else if(centsOff<0){
+    statusEl.classList.add('flat');
+    statusEl.textContent=`♭ Flat by ${Math.abs(centsOff).toFixed(1)} cents`;
+  }else{
+    statusEl.classList.add('sharp');
+    statusEl.textContent=`♯ Sharp by ${centsOff.toFixed(1)} cents`;
+  }
+}
+
+// Tuner processing loop
+function processTunerAudio(){
+  if(!tunerState.isActive)return;
+  
+  const buffer=new Uint8Array(tunerState.analyser.frequencyBinCount);
+  tunerState.analyser.getByteFrequencyData(buffer);
+  
+  // Convert to float for pitch detection
+  const floatBuffer=new Float32Array(tunerState.analyser.fftSize);
+  tunerState.analyser.getByteTimeDomainData(buffer);
+  for(let i=0;i<buffer.length;i++){
+    floatBuffer[i]=(buffer[i]-128)/128;
+  }
+  
+  const freq=autoCorrelate(floatBuffer,tunerState.audioContext.sampleRate);
+  
+  if(freq>-1){
+    updateTunerDisplay(freq);
+  }else{
+    document.getElementById('tuner-note').textContent='--';
+    document.getElementById('tuner-status').textContent='No sound detected. Tune string louder.';
+  }
+  
+  tunerState.animationId=requestAnimationFrame(processTunerAudio);
+}
+
+// Toggle tuner on/off
+async function toggleTuner(){
+  if(tunerState.isActive){
+    stopTuner();
+  }else{
+    startTuner();
+  }
+}
+
+// Start the tuner
+async function startTuner(){
+  try{
+    // Create audio context if needed
+    if(!tunerState.audioContext){
+      tunerState.audioContext=new(window.AudioContext||window.webkitAudioContext)();
+    }
+    
+    // Request microphone access
+    tunerState.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    
+    const source=tunerState.audioContext.createMediaStreamSource(tunerState.stream);
+    tunerState.analyser=tunerState.audioContext.createAnalyser();
+    tunerState.analyser.fftSize=4096;
+    source.connect(tunerState.analyser);
+    
+    tunerState.isActive=true;
+    document.getElementById('tuner-start-btn').textContent='🎤 Stop Tuner';
+    document.getElementById('tuner-start-btn').classList.add('active');
+    
+    processTunerAudio();
+  }catch(err){
+    console.error('Tuner access error:',err);
+    alert('Could not access microphone. Please check permissions and try again.');
+  }
+}
+
+// Stop the tuner
+function stopTuner(){
+  tunerState.isActive=false;
+  
+  if(tunerState.stream){
+    tunerState.stream.getTracks().forEach(track=>track.stop());
+    tunerState.stream=null;
+  }
+  
+  if(tunerState.animationId){
+    cancelAnimationFrame(tunerState.animationId);
+  }
+  
+  document.getElementById('tuner-start-btn').textContent='🎤 Start Tuner';
+  document.getElementById('tuner-start-btn').classList.remove('active');
+  document.getElementById('tuner-note').textContent='--';
+  document.getElementById('tuner-status').textContent='Tuner stopped.';
+  document.getElementById('tuner-needle').style.left='50%';
+}
+
+// ============= CHORD GENERATION =============
+// Major triad formulas for each scale degree (intervals from root)
+const CHORD_FORMULAS={
+  major:{  // I ii iii IV V vi vii°
+    0:{intervals:[0,4,7],quality:'maj'},    // I
+    1:{intervals:[0,3,7],quality:'min'},    // ii
+    2:{intervals:[0,3,7],quality:'min'},    // iii
+    3:{intervals:[0,4,7],quality:'maj'},    // IV
+    4:{intervals:[0,4,7],quality:'maj'},    // V
+    5:{intervals:[0,3,7],quality:'min'},    // vi
+    6:{intervals:[0,3,6],quality:'dim'}     // vii°
+  },
+  minor:{  // i ii° III iv v VI VII
+    0:{intervals:[0,3,7],quality:'min'},    // i
+    1:{intervals:[0,3,6],quality:'dim'},    // ii°
+    2:{intervals:[0,4,7],quality:'maj'},    // III
+    3:{intervals:[0,3,7],quality:'min'},    // iv
+    4:{intervals:[0,3,7],quality:'min'},    // v
+    5:{intervals:[0,4,7],quality:'maj'},    // VI
+    6:{intervals:[0,4,7],quality:'maj'}     // VII
+  },
+  pentatonicMaj:{
+    0:{intervals:[0,4,7],quality:'maj'},    // I
+    1:{intervals:[0,3,7],quality:'min'},    // ii
+    2:{intervals:[0,3,7],quality:'min'},    // iii (actually should be skip, but use closest)
+    3:{intervals:[0,4,7],quality:'maj'},    // IV
+    4:{intervals:[0,4,7],quality:'maj'}     // V
+  },
+  pentatonicMin:{
+    0:{intervals:[0,3,7],quality:'min'},    // i
+    1:{intervals:[0,3,6],quality:'dim'},    // ii°
+    2:{intervals:[0,4,7],quality:'maj'},    // III
+    3:{intervals:[0,3,7],quality:'min'},    // iv
+    4:{intervals:[0,4,7],quality:'maj'}     // V
+  },
+  blues:{
+    0:{intervals:[0,3,7],quality:'min'},
+    1:{intervals:[0,3,7],quality:'min'},
+    2:{intervals:[0,4,7],quality:'maj'}
+  }
+};
+
+// Roman numeral progressions
+const ROMAN_NUMERALS={
+  major:['I','ii','iii','IV','V','vi','vii°'],
+  minor:['i','ii°','III','iv','v','VI','VII'],
+  pentatonicMaj:['I','ii','iii','IV','V'],
+  pentatonicMin:['i','ii°','III','iv','V'],
+  blues:['i','i','V']
+};
+
+// Note color mapping - consistent colors for each note across all chords
+const NOTE_COLORS={
+  'C':'#FF6B6B','C#':'#FF8C42','D':'#FFD93D','D#':'#6BCB77','E':'#4D96FF',
+  'F':'#9D84B7','F#':'#FF6B9D','G':'#FFB347','G#':'#87CEEB','A':'#90EE90',
+  'A#':'#FFB6C1','B':'#98D8C8'
+};
+
+// Chord tone position color mapping (root, third, fifth, seventh, etc.)
+const CHORD_TONE_COLORS=[
+  '#FF6B6B',  // root (1st) - red
+  '#FF8C42',  // third (3rd) - orange
+  '#4DB8FF',  // fifth (5th) - teal
+  '#FF6B9D',  // seventh (7th) - fuchsia
+  '#FFD93D',  // ninth (9th) - yellow
+  '#6BCB77',  // eleventh (11th) - green
+  '#9D84B7'   // thirteenth (13th) - purple
+];
+
+// State for chord voicings
+const chordVoicingState={
+  voicings:{},  // {chordKey: [{positions: [], score: num}, ...]}
+  currentVoicing:{}  // {chordKey: voicingIndex}
+};
+
+// Get chords for a given scale and key
+function generateChordsForScale(key,scaleType){
+  const k=ENH[key]||key;
+  const root=NOTE_TO_IDX[k];
+  if(root===undefined||!SCALES[scaleType])return[];
+  
+  const scaleIntervals=SCALES[scaleType];
+  const scaleNotes=scaleIntervals.map(i=>NOTES[(root+i)%12]);
+  const chords=[];
+  
+  const formula=CHORD_FORMULAS[scaleType]||CHORD_FORMULAS.major;
+  const numerals=ROMAN_NUMERALS[scaleType]||ROMAN_NUMERALS.major;
+  
+  for(let degree=0;degree<scaleIntervals.length;degree++){
+    const chordFormula=formula[degree];
+    if(!chordFormula)continue;
+    
+    const chordRoot=scaleNotes[degree];
+    const chordNotes=chordFormula.intervals.map(interval=>{
+      const noteIdx=(NOTE_TO_IDX[chordRoot]+interval)%12;
+      return NOTES[noteIdx];
+    });
+    
+    chords.push({
+      name:chordRoot+chordFormula.quality.replace('min','m').replace('maj',''),
+      root:chordRoot,
+      notes:chordNotes,
+      quality:chordFormula.quality,
+      roman:numerals[degree],
+      intervals:chordFormula.intervals,
+      key:`${chordRoot}_${degree}`  // Unique key for this chord
+    });
+  }
+  
+  return chords;
+}
+
+// Find all feasible voicings for a chord
+function findAllChordVoicings(chordNotes){
+  const tuningNotes=TUNINGS[state.tuning]||TUNINGS.standard;
+  const voicings=[];
+  
+  // Strategy 1: Search different fret ranges with tight spans
+  for(let startFret=0;startFret<=8;startFret++){
+    const endFret=Math.min(startFret+5,22);  // 5-fret max span
+    const positions=[null,null,null,null,null,null];
+    
+    for(let stringIdx=0;stringIdx<6;stringIdx++){
+      const openNote=tuningNotes[stringIdx];
+      const openMidi=noteToMidi(openNote);
+      
+      let bestFret=null;
+      let bestNote=null;
+      let bestScore=Infinity;
+      
+      for(const chordNote of chordNotes){
+        const chordNoteIdx=NOTE_TO_IDX[chordNote];
+        if(chordNoteIdx===undefined)continue;
+        
+        for(let octave=0;octave<4;octave++){
+          const targetMidi=chordNoteIdx+(octave+2)*12;
+          const fret=targetMidi-openMidi;
+          
+          if(fret>=startFret&&fret<=endFret){
+            const distFromCenter=Math.abs(fret-(startFret+2.5));
+            if(distFromCenter<bestScore){
+              bestScore=distFromCenter;
+              bestFret=fret;
+              bestNote=chordNote;
+            }
+          }
+        }
+      }
+      
+      if(bestFret!==null){
+        positions[stringIdx]={fret:bestFret,note:bestNote};
+      }
+    }
+    
+    const notesInVoicing=positions.filter(p=>p!==null).length;
+    if(notesInVoicing>=3){
+      const score=scoreVoicing(positions,chordNotes);
+      voicings.push({positions:positions.slice(),score:score});
+    }
+  }
+  
+  // Strategy 2: Open/low position voicings
+  for(let maxFret=3;maxFret<=6;maxFret++){
+    const positions=[null,null,null,null,null,null];
+    
+    for(let stringIdx=0;stringIdx<6;stringIdx++){
+      const openNote=tuningNotes[stringIdx];
+      const openMidi=noteToMidi(openNote);
+      
+      for(const chordNote of chordNotes){
+        const chordNoteIdx=NOTE_TO_IDX[chordNote];
+        if(chordNoteIdx===undefined)continue;
+        
+        for(let octave=0;octave<4;octave++){
+          const targetMidi=chordNoteIdx+(octave+2)*12;
+          const fret=targetMidi-openMidi;
+          
+          if(fret>=0&&fret<=maxFret&&!positions[stringIdx]){
+            positions[stringIdx]={fret:fret,note:chordNote};
+            break;
+          }
+        }
+      }
+    }
+    
+    const notesInVoicing=positions.filter(p=>p!==null).length;
+    if(notesInVoicing>=3){
+      const score=scoreVoicing(positions,chordNotes);
+      voicings.push({positions:positions.slice(),score:score});
+    }
+  }
+  
+  // Strategy 3: Higher register voicings
+  for(let startFret=7;startFret<=16;startFret+=2){
+    const endFret=Math.min(startFret+4,22);
+    const positions=[null,null,null,null,null,null];
+    
+    for(let stringIdx=0;stringIdx<6;stringIdx++){
+      const openNote=tuningNotes[stringIdx];
+      const openMidi=noteToMidi(openNote);
+      
+      let bestFret=null;
+      let bestNote=null;
+      let bestDistance=Infinity;
+      
+      for(const chordNote of chordNotes){
+        const chordNoteIdx=NOTE_TO_IDX[chordNote];
+        if(chordNoteIdx===undefined)continue;
+        
+        for(let octave=0;octave<4;octave++){
+          const targetMidi=chordNoteIdx+(octave+2)*12;
+          const fret=targetMidi-openMidi;
+          
+          if(fret>=startFret&&fret<=endFret){
+            const distance=Math.abs(fret-(startFret+2));
+            if(distance<bestDistance){
+              bestDistance=distance;
+              bestFret=fret;
+              bestNote=chordNote;
+            }
+          }
+        }
+      }
+      
+      if(bestFret!==null){
+        positions[stringIdx]={fret:bestFret,note:bestNote};
+      }
+    }
+    
+    const notesInVoicing=positions.filter(p=>p!==null).length;
+    if(notesInVoicing>=3){
+      const score=scoreVoicing(positions,chordNotes)-1;
+      voicings.push({positions:positions.slice(),score:score});
+    }
+  }
+  
+  // Sort by score and remove duplicates
+  voicings.sort((a,b)=>b.score-a.score);
+  
+  const uniqueVoicings=[];
+  const seen=new Set();
+  for(const v of voicings){
+    const key=v.positions.map(p=>p?.fret??'x').join('-');
+    if(!seen.has(key)){
+      seen.add(key);
+      uniqueVoicings.push(v);
+      if(uniqueVoicings.length>=8)break;
+    }
+  }
+  
+  return uniqueVoicings.length>0?uniqueVoicings:[{positions:[null,null,null,null,null,null],score:0}];
+}
+
+// Score a voicing based on playability
+function scoreVoicing(positions,chordNotes){
+  let score=10;
+  
+  const frets=positions.filter(p=>p!==null).map(p=>p.fret);
+  if(frets.length===0)return 0;
+  
+  // Prefer lower positions
+  const minFret=Math.min(...frets);
+  score+=Math.max(0,12-minFret*0.8);
+  
+  // Prefer tighter spans
+  const span=Math.max(...frets)-minFret;
+  score+=Math.max(0,15-span*2);
+  
+  // Prefer more notes
+  score+=frets.length*2.5;
+  
+  // Prefer open strings
+  const openCount=positions.filter(p=>p!==null&&p.fret===0).length;
+  score+=openCount*4;
+  
+  // Penalize wide gaps between adjacent strings
+  for(let i=0;i<5;i++){
+    if(positions[i]!==null&&positions[i+1]!==null){
+      const gap=Math.abs(positions[i].fret-positions[i+1].fret);
+      if(gap>5)score-=3;
+    }
+  }
+  
+  return Math.max(0,score);
+}
+
+// Render a single chord diagram with specific voicing
+function renderChordDiagram(chord,voicingIndex=0){
+  const voicings=chordVoicingState.voicings[chord.key]||[];
+  const voicing=voicings[voicingIndex]||voicings[0];
+  const positions=voicing?.positions||[null,null,null,null,null,null];
+  
+  // Map each note to its chord tone position (root, third, fifth, seventh, etc.)
+  const noteColorMap={};
+  for(let i=0;i<chord.notes.length;i++){
+    const note=chord.notes[i];
+    const color=CHORD_TONE_COLORS[i]||'#4a9ade';
+    noteColorMap[note]=color;
+  }
+  
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 100 140');
+  svg.setAttribute('class','chord-svg');
+  
+  // Only consider fretted notes (fret > 0) when determining display range; ignore open strings in min calculation
+  const frettedFrets=positions.filter(p=>p!==null&&p.fret>0).map(p=>p.fret);
+  const hasOpenStrings=positions.some(p=>p!==null&&p.fret===0);
+  const maxFret=frettedFrets.length>0?Math.max(...frettedFrets):4;
+  const minFretted=frettedFrets.length>0?Math.min(...frettedFrets):1;
+  const fretStart=hasOpenStrings?0:minFretted;
+  const showFrets=Math.min(maxFret-fretStart+1,5);
+  
+  const fretH=24;
+  const stringW=12;
+  const startX=15;
+  const startY=15;
+  
+  // Fret indicator (NUT or fret number)
+  if(fretStart===0){
+    const nutLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+    nutLine.setAttribute('x1',startX-2);
+    nutLine.setAttribute('y1',startY);
+    nutLine.setAttribute('x2',startX+stringW*5+2);
+    nutLine.setAttribute('y2',startY);
+    nutLine.setAttribute('stroke','#fff');
+    nutLine.setAttribute('stroke-width','3');
+    svg.appendChild(nutLine);
+  }else{
+    const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x',startX-8);
+    label.setAttribute('y',startY+8);
+    label.setAttribute('font-size','10');
+    label.setAttribute('fill','#999');
+    label.textContent=fretStart;
+    svg.appendChild(label);
+  }
+  
+  // Fret lines
+  for(let f=0;f<=showFrets;f++){
+    const y=startY+f*fretH;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',startX);
+    line.setAttribute('y1',y);
+    line.setAttribute('x2',startX+stringW*5);
+    line.setAttribute('y2',y);
+    line.setAttribute('stroke','#666');
+    line.setAttribute('stroke-width','0.5');
+    svg.appendChild(line);
+  }
+  
+  // String lines
+  for(let s=0;s<6;s++){
+    const x=startX+s*stringW;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x);
+    line.setAttribute('y1',startY);
+    line.setAttribute('x2',x);
+    line.setAttribute('y2',startY+showFrets*fretH);
+    line.setAttribute('stroke','#888');
+    line.setAttribute('stroke-width','1');
+    svg.appendChild(line);
+  }
+  
+  // String labels
+  const tuningDisp=TUNINGS[state.tuning];
+  for(let s=0;s<6;s++){
+    const x=startX+s*stringW;
+    const note=tuningDisp[5-s].replace(/\d/,'');
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x',x);
+    text.setAttribute('y',startY-5);
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('font-size','9');
+    text.setAttribute('fill','#999');
+    text.textContent=note;
+    svg.appendChild(text);
+  }
+  
+  // Open strings (X or O)
+  for(let s=0;s<6;s++){
+    const x=startX+s*stringW;
+    if(positions[s]===null){
+      const xMark=document.createElementNS('http://www.w3.org/2000/svg','text');
+      xMark.setAttribute('x',x);
+      xMark.setAttribute('y',startY-8);
+      xMark.setAttribute('text-anchor','middle');
+      xMark.setAttribute('font-size','12');
+      xMark.setAttribute('font-weight','bold');
+      xMark.setAttribute('fill','#ff6b6b');
+      xMark.textContent='✕';
+      svg.appendChild(xMark);
+    }else if(positions[s].fret===0){
+      const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circle.setAttribute('cx',x);
+      circle.setAttribute('cy',startY-7);
+      circle.setAttribute('r','4');
+      circle.setAttribute('fill','none');
+      circle.setAttribute('stroke','#4a9ade');
+      circle.setAttribute('stroke-width','1.5');
+      svg.appendChild(circle);
+    }
+  }
+  
+  // Finger dots
+  for(let s=0;s<6;s++){
+    if(positions[s]&&positions[s].fret>0){
+      const fretPos=positions[s].fret-fretStart;
+      const x=startX+s*stringW;
+      const y=startY+(fretPos+0.5)*fretH;
+      
+      const noteColor=noteColorMap[positions[s].note]||'#4a9ade';
+      
+      const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circle.setAttribute('cx',x);
+      circle.setAttribute('cy',y);
+      circle.setAttribute('r','5');
+      circle.setAttribute('fill',noteColor);
+      circle.setAttribute('opacity','0.9');
+      svg.appendChild(circle);
+      
+      const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x',x);
+      text.setAttribute('y',y+2.5);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('font-size','8');
+      text.setAttribute('fill','#fff');
+      text.setAttribute('font-weight','600');
+      text.textContent=positions[s].note;
+      svg.appendChild(text);
+    }
+  }
+  
+  return svg;
+}
+
+// Cycle to next voicing for a chord
+function cycleChordVoicing(chordKey){
+  const voicingCount=chordVoicingState.voicings[chordKey]?.length||0;
+  if(voicingCount===0)return;
+  
+  const current=chordVoicingState.currentVoicing[chordKey]||0;
+  const next=(current+1)%voicingCount;
+  chordVoicingState.currentVoicing[chordKey]=next;
+  
+  updateChordDisplay(chordKey);
+}
+
+// Update chord diagram display
+function updateChordDisplay(chordKey){
+  const container=document.querySelector(`[data-chord-key="${chordKey}"]`);
+  if(!container)return;
+  
+  const voicingIndex=chordVoicingState.currentVoicing[chordKey]||0;
+  const voicings=chordVoicingState.voicings[chordKey]||[];
+  
+  // Rebuild the SVG
+  const oldSvg=container.querySelector('.chord-svg');
+  if(oldSvg)oldSvg.remove();
+  
+  // Get chord info from container
+  const chordName=container.querySelector('.chord-name').textContent;
+  const chordParts=chordName.split(' - ');
+  
+  // Create minimal chord object for rendering
+  const chordKey_data=Array.from(container.parentNode.querySelectorAll('[data-chord-key]')).indexOf(container);
+  
+  // We need to find the original chord object
+  const allChords=generateChordsForScale(state.key,state.scale);
+  const chord=allChords.find(c=>c.key===chordKey);
+  if(!chord)return;
+  
+  const svg=renderChordDiagram(chord,voicingIndex);
+  container.appendChild(svg);
+  
+  // Update voicing counter
+  const counter=container.querySelector('.voicing-counter');
+  if(counter){
+    counter.textContent=`[${voicingIndex+1}/${voicings.length}]`;
+  }
+}
+
+// Render all chords for current scale
+function renderChords(){
+  const chordsSection=document.getElementById('chords-section');
+  const chordsGrid=document.getElementById('chords-grid');
+  const chordLegend=document.getElementById('chord-legend');
+  
+  const chords=generateChordsForScale(state.key,state.scale);
+  
+  if(chords.length===0){
+    chordsSection.classList.add('hidden');
+    return;
+  }
+  
+  chordsGrid.innerHTML='';
+  chordsSection.classList.remove('hidden');
+  
+  // Generate all voicings first
+  chordVoicingState.voicings={};
+  chordVoicingState.currentVoicing={};
+  
+  for(const chord of chords){
+    chordVoicingState.voicings[chord.key]=findAllChordVoicings(chord.notes);
+    chordVoicingState.currentVoicing[chord.key]=0;
+  }
+  
+  // Render all chords
+  for(const chord of chords){
+    const container=document.createElement('div');
+    container.className='chord-diagram';
+    container.setAttribute('data-chord-key',chord.key);
+    
+    const nameDiv=document.createElement('div');
+    nameDiv.className='chord-name';
+    nameDiv.textContent=`${chord.roman} - ${chord.name}`;
+    container.appendChild(nameDiv);
+    
+    const voicings=chordVoicingState.voicings[chord.key];
+    const counter=document.createElement('div');
+    counter.className='voicing-counter';
+    counter.textContent=`[1/${voicings.length}]`;
+    container.appendChild(counter);
+    
+    const svg=renderChordDiagram(chord,0);
+    container.appendChild(svg);
+    
+    // Add click handler to cycle voicings
+    container.addEventListener('click',()=>{
+      cycleChordVoicing(chord.key);
+    });
+    
+    chordsGrid.appendChild(container);
+  }
+  
+  // Render chord tone position color legend
+  chordLegend.innerHTML='';
+  const legendTitle=document.createElement('div');
+  legendTitle.style.width='100%';
+  legendTitle.style.fontSize='11px';
+  legendTitle.style.color='var(--text-muted)';
+  legendTitle.style.textTransform='uppercase';
+  legendTitle.style.letterSpacing='0.1em';
+  legendTitle.style.marginBottom='8px';
+  legendTitle.textContent='Chord Tones';
+  chordLegend.appendChild(legendTitle);
+  
+  const toneNames=['Root','3rd','5th','7th','9th','11th','13th'];
+  for(let i=0;i<toneNames.length;i++){
+    const item=document.createElement('div');
+    item.className='chord-legend-item';
+    
+    const dot=document.createElement('div');
+    dot.className='chord-legend-dot';
+    dot.style.backgroundColor=CHORD_TONE_COLORS[i];
+    item.appendChild(dot);
+    
+    const label=document.createElement('span');
+    label.textContent=toneNames[i];
+    item.appendChild(label);
+    
+    chordLegend.appendChild(item);
+  }
+}
+
+// Initial render
+drawNeck();
+</script>
+
+<script>
+// ── Collapsible log window ──────────────────────────────────────────────────
+let _logCount = 0;
+(function () {
+  const _origLog   = console.log.bind(console);
+  const _origWarn  = console.warn.bind(console);
+  const _origError = console.error.bind(console);
+
+  function ts() {
+    const n = new Date();
+    return [n.getHours(), n.getMinutes(), n.getSeconds()]
+      .map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  function append(level, args) {
+    const body = document.getElementById('log-body');
+    if (!body) return;
+    _logCount++;
+    const badge = document.getElementById('log-badge');
+    if (badge) badge.textContent = _logCount > 999 ? '999+' : String(_logCount);
+
+    const raw = args.map(a =>
+      (a !== null && typeof a === 'object') ? JSON.stringify(a) : String(a)
+    ).join(' ');
+
+    // Classify: note play events get green treatment
+    const isPlay = raw.includes('🎵') || /^\s{20,}/.test(raw);
+    const cls    = isPlay ? 'log-play' : `log-${level}`;
+    const icons  = { info: '●', warn: '▲', error: '✕', play: '♪' };
+    const icon   = icons[isPlay ? 'play' : level] || '●';
+
+    const row = document.createElement('div');
+    row.className = `log-entry ${cls}`;
+    row.innerHTML =
+      `<span class="log-ts">${ts()}</span>` +
+      `<span class="log-lvl">${icon}</span>` +
+      `<span class="log-msg">${raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+    body.appendChild(row);
+    requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
+  }
+
+  console.log   = (...a) => { _origLog(...a);   append('info',  a); };
+  console.warn  = (...a) => { _origWarn(...a);  append('warn',  a); };
+  console.error = (...a) => { _origError(...a); append('error', a); };
+})();
+
+function toggleLogPanel() {
+  const body = document.getElementById('log-body');
+  const btn  = document.getElementById('log-toggle');
+  const collapsed = body.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '▶ Show' : '▼ Hide';
+}
+
+function clearLog() {
+  document.getElementById('log-body').innerHTML = '';
+  _logCount = 0;
+  document.getElementById('log-badge').textContent = '0';
+}
+
+// ── Tuner: arc needle + status LEDs + note colour ──────────────────────────
+(function () {
+  function sync() {
+    const needle    = document.getElementById('tuner-needle');
+    const svgNeedle = document.getElementById('tuner-needle-arc');
+    const statusEl  = document.getElementById('tuner-status');
+    const noteEl    = document.getElementById('tuner-note');
+    if (!needle || !svgNeedle || !statusEl || !noteEl) return;
+
+    // Map the hidden div's left% to a -90…+90 degree SVG rotation
+    const pct   = parseFloat(needle.style.left) || 50;
+    const angle = (pct - 50) * 1.8;
+    svgNeedle.setAttribute('transform', `rotate(${angle},110,110)`);
+
+    const isIn    = statusEl.classList.contains('in-tune');
+    const isFlat  = statusEl.classList.contains('flat');
+    const isSharp = statusEl.classList.contains('sharp');
+
+    // Sync LCD note colour
+    noteEl.className = 'tuner-note-big' +
+      (isIn ? ' in-tune' : isFlat ? ' flat' : isSharp ? ' sharp' : '');
+
+    // Sync LEDs
+    const lF = document.getElementById('tuner-led-flat');
+    const lC = document.getElementById('tuner-led-center');
+    const lS = document.getElementById('tuner-led-sharp');
+    if (lF) lF.className = 'tuner-led' + (isFlat  ? ' flat-led'    : '');
+    if (lC) lC.className = 'tuner-led' + (isIn    ? ' in-tune-led' : '');
+    if (lS) lS.className = 'tuner-led' + (isSharp ? ' sharp-led'   : '');
+  }
+
+  function resetVisuals() {
+    const svgN = document.getElementById('tuner-needle-arc');
+    if (svgN) svgN.setAttribute('transform', 'rotate(0,110,110)');
+    const noteEl = document.getElementById('tuner-note');
+    if (noteEl) noteEl.className = 'tuner-note-big';
+    ['tuner-led-flat', 'tuner-led-center', 'tuner-led-sharp'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.className = 'tuner-led';
+    });
+  }
+
+  if (window.MutationObserver) {
+    // Watch the hidden needle div's inline-style (updateTunerDisplay writes left%)
+    const needleEl = document.getElementById('tuner-needle');
+    if (needleEl)
+      new MutationObserver(sync).observe(needleEl, { attributes: true, attributeFilter: ['style'] });
+
+    // Watch tuner-status class list for in-tune / flat / sharp
+    const statusEl = document.getElementById('tuner-status');
+    if (statusEl)
+      new MutationObserver(sync).observe(statusEl, { attributes: true, attributeFilter: ['class'] });
+
+    // When start-btn loses 'active' the tuner stopped → reset visuals
+    const startBtn = document.getElementById('tuner-start-btn');
+    if (startBtn)
+      new MutationObserver(() => {
+        if (!startBtn.classList.contains('active')) resetVisuals();
+      }).observe(startBtn, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
+</script>
